@@ -124,13 +124,13 @@ function QuickAdd({ meId }: { meId: string }) {
   async function save(e: React.FormEvent) {
     e.preventDefault();
     if (!title.trim()) return;
-    if (!assignedTo) return toast.error("Escolha um responsável");
+    if (!assignedTo) { toast.error("Escolha um responsável"); return; }
     setSaving(true);
     const { error } = await supabase.from("tasks").insert({
       title: title.trim(), description, priority, assigned_to: assignedTo, created_by: meId, due_date: due,
     });
     setSaving(false);
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     toast.success("Tarefa registrada");
     setTitle(""); setDescription(""); setOpen(false);
     qc.invalidateQueries({ queryKey: ["tasks"] });

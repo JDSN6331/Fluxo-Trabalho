@@ -41,7 +41,7 @@ function Body({ task, onClose }: { task: Task; onClose: () => void }) {
 
   async function setStatus(status: Status) {
     const { error } = await supabase.from("tasks").update({ status }).eq("id", task.id);
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     toast.success(status === "concluida" ? "Tarefa concluída" : status === "cancelada" ? "Tarefa cancelada" : "Tarefa reaberta");
     qc.invalidateQueries({ queryKey: ["tasks"] });
     onClose();
@@ -49,13 +49,13 @@ function Body({ task, onClose }: { task: Task; onClose: () => void }) {
   async function addComment() {
     if (!text.trim() || !me) return;
     const { error } = await supabase.from("task_comments").insert({ task_id: task.id, author_id: me.id, body: text.trim() });
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     setText("");
     qc.invalidateQueries({ queryKey: ["comments", task.id] });
   }
   async function remove() {
     const { error } = await supabase.from("tasks").delete().eq("id", task.id);
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     qc.invalidateQueries({ queryKey: ["tasks"] });
     onClose();
   }

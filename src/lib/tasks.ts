@@ -61,7 +61,7 @@ export const meQuery = queryOptions({
     const user = data.user;
     if (!user) return null;
     const { data: r } = await supabase.from("user_roles").select("role").eq("user_id", user.id).maybeSingle();
-    return { id: user.id, email: user.email ?? "", name: (user.user_metadata?.full_name as string) ?? user.email ?? "", role: (r?.role ?? "solicitante") as Role };
+    return { id: user.id, email: user.email ?? "", name: (user.user_metadata?.["full_name"] as string) ?? user.email ?? "", role: (r?.role ?? "solicitante") as Role };
   },
 });
 
