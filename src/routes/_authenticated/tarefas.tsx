@@ -3,15 +3,31 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Plus } from "lucide-react";
+import { Plus, Search } from "lucide-react";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
+import { createTask } from "@/lib/workflow.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-import { meQuery, peopleQuery, tasksQuery, STATUS_DOT, PRIORITY_LABEL, type Priority, type Status, type Task } from "@/lib/tasks";
+import {
+  meQuery,
+  peopleQuery,
+  tasksQuery,
+  STATUS_DOT,
+  PRIORITY_LABEL,
+  type Priority,
+  type Status,
+  type Task,
+} from "@/lib/tasks";
 import { PriorityChip, StatusChip, TaskDetail } from "@/components/TaskDetail";
 
 export const Route = createFileRoute("/_authenticated/tarefas")({
@@ -35,22 +51,33 @@ const FILTERS: { v: Status | "todas"; l: string }[] = [
 
 function TasksPage() {
   const { data: me } = useQuery(meQuery);
-  const { data: tasks = [] } = useQuery(tasksQuery);
+  const { data: tasks = [], isLoading, error } = useQuery(tasksQuery);
+  const { data: people = [] } = useQuery(peopleQuery);
   const [filter, setFilter] = useState<Status | "todas">("em_andamento");
+  const [search, setSearch] = useState("");
+  const [priorityFilter, setPriorityFilter] = useState<Priority | "todas">("todas");
+  const [assigneeFilter, setAssigneeFilter] = useState("todos");
   const [selected, setSelected] = useState<Task | null>(null);
 
-  const mine = tasks.filter((t) => t.created_by === me?.id || t.assigned_to === me?.id);
-  const list = mine.filter((t) => filter === "todas" || t.status === filter);
-  const count = (s: Status) => mine.filter((t) => t.status === s).length;
+  const list = tasks.filter(
+    (t) =>
+      (filter === "todas" || t.status === filter) &&
+      (priorityFilter === "todas" || t.priority === priorityFilter) &&
+      (assigneeFilter === "todos" || t.assigned_to === assigneeFilter) &&
+      `${t.title} ${t.description}`
+        .toLocaleLowerCase("pt-BR")
+        .includes(search.toLocaleLowerCase("pt-BR")),
+  );
+  const count = (s: Status) => tasks.filter((t) => t.status === s).length;
 
   return (
     <div className="space-y-8">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="text-sm text-muted-foreground">{format(new Date(), "EEEE, d 'de' MMMM", { locale: ptBR })}</p>
-          <h1 className="font-display text-4xl font-bold">
-            {me?.role === "responsavel" ? "Tarefas recebidas" : "Minhas tarefas"}
-          </h1>
+          <p className="text-sm text-muted-foreground">
+            {format(new Date(), "EEEE, d 'de' MMMM", { locale: ptBR })}
+          </p>
+          <h1 className="font-display text-4xl font-bold">Todas as tarefas</h1>
         </div>
         <div className="flex gap-6 text-sm">
           <Stat n={count("em_andamento")} l="Em andamento" dot={STATUS_DOT.em_andamento} />
@@ -59,7 +86,12 @@ function TasksPage() {
         </div>
       </div>
 
-      {me?.role === "solicitante" && <QuickAdd meId={me.id} />}
+      {(me?.role === "solicitante" || me?.role === "administrador") && <QuickAdd meId={me.id} />}
+      {me?.role === "pendente" && (
+        <div className="rounded-xl border border-warning/40 bg-warning/10 p-4 text-sm">
+          Seu cadastro aguarda a definição de papel pelo administrador.
+        </div>
+      )}
 
       <div className="flex gap-1 border-b border-border">
         {FILTERS.map((f) => (
@@ -68,7 +100,9 @@ function TasksPage() {
             onClick={() => setFilter(f.v)}
             className={cn(
               "-mb-px border-b-2 px-4 py-2 text-sm transition-colors",
-              filter === f.v ? "border-primary text-foreground" : "border-transparent text-muted-foreground hover:text-foreground",
+              filter === f.v
+                ? "border-primary text-foreground"
+                : "border-transparent text-muted-foreground hover:text-foreground",
             )}
           >
             {f.l}
@@ -76,8 +110,61 @@ function TasksPage() {
         ))}
       </div>
 
+      <div className="grid gap-3 md:grid-cols-[1fr_180px_220px]">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="pl-9"
+            placeholder="Buscar por título ou descrição"
+          />
+        </div>
+        <Select
+          value={priorityFilter}
+          onValueChange={(v) => setPriorityFilter(v as Priority | "todas")}
+        >
+          <SelectTrigger>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="todas">Todas as prioridades</SelectItem>
+            {(["alta", "media", "baixa"] as Priority[]).map((p) => (
+              <SelectItem key={p} value={p}>
+                {PRIORITY_LABEL[p]}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select value={assigneeFilter} onValueChange={setAssigneeFilter}>
+          <SelectTrigger>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="todos">Todos os responsáveis</SelectItem>
+            {people
+              .filter((p) => p.role === "responsavel")
+              .map((p) => (
+                <SelectItem key={p.id} value={p.id}>
+                  {p.full_name || p.email}
+                </SelectItem>
+              ))}
+          </SelectContent>
+        </Select>
+      </div>
+
       <div className="notepad overflow-hidden rounded-xl border border-border bg-card">
-        {list.length === 0 && <p className="py-16 text-center text-sm text-muted-foreground">Nada por aqui.</p>}
+        {isLoading && (
+          <p className="py-16 text-center text-sm text-muted-foreground">Carregando tarefas…</p>
+        )}
+        {error && (
+          <p className="py-16 text-center text-sm text-destructive">
+            Não foi possível carregar as tarefas.
+          </p>
+        )}
+        {!isLoading && !error && list.length === 0 && (
+          <p className="py-16 text-center text-sm text-muted-foreground">Nada por aqui.</p>
+        )}
         {list.map((t) => (
           <button
             key={t.id}
@@ -85,17 +172,32 @@ function TasksPage() {
             className="flex h-14 w-full items-center gap-4 border-b border-border/50 px-5 text-left transition-colors last:border-0 hover:bg-accent/60"
           >
             <span className={cn("h-2 w-2 shrink-0 rounded-full", STATUS_DOT[t.status])} />
-            <span className={cn("flex-1 truncate", t.status !== "em_andamento" && "text-muted-foreground line-through decoration-muted-foreground/50")}>
+            <span
+              className={cn(
+                "flex-1 truncate",
+                t.status !== "em_andamento" &&
+                  "text-muted-foreground line-through decoration-muted-foreground/50",
+              )}
+            >
               {t.title}
             </span>
-            <span className="hidden sm:block"><PriorityChip p={t.priority} /></span>
-            <span className="hidden md:block"><StatusChip status={t.status} /></span>
-            <span className="w-16 text-right text-xs text-muted-foreground">{format(parseISO(t.due_date), "dd MMM", { locale: ptBR })}</span>
+            <span className="hidden sm:block">
+              <PriorityChip p={t.priority} />
+            </span>
+            <span className="hidden md:block">
+              <StatusChip status={t.status} />
+            </span>
+            <span className="w-16 text-right text-xs text-muted-foreground">
+              {format(parseISO(t.due_date), "dd MMM", { locale: ptBR })}
+            </span>
           </button>
         ))}
       </div>
 
-      <TaskDetail task={selected ? tasks.find((t) => t.id === selected.id) ?? null : null} onClose={() => setSelected(null)} />
+      <TaskDetail
+        task={selected ? (tasks.find((t) => t.id === selected.id) ?? null) : null}
+        onClose={() => setSelected(null)}
+      />
     </div>
   );
 }
@@ -104,7 +206,10 @@ function Stat({ n, l, dot }: { n: number; l: string; dot: string }) {
   return (
     <div>
       <div className="font-display text-2xl font-bold">{n}</div>
-      <div className="flex items-center gap-1.5 text-xs text-muted-foreground"><span className={cn("h-1.5 w-1.5 rounded-full", dot)} />{l}</div>
+      <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+        <span className={cn("h-1.5 w-1.5 rounded-full", dot)} />
+        {l}
+      </div>
     </div>
   );
 }
@@ -124,15 +229,28 @@ function QuickAdd({ meId }: { meId: string }) {
   async function save(e: React.FormEvent) {
     e.preventDefault();
     if (!title.trim()) return;
-    if (!assignedTo) { toast.error("Escolha um responsável"); return; }
+    if (!assignedTo) {
+      toast.error("Escolha um responsável");
+      return;
+    }
     setSaving(true);
-    const { error } = await supabase.from("tasks").insert({
-      title: title.trim(), description, priority, assigned_to: assignedTo, created_by: meId, due_date: due,
-    });
+    let error: unknown;
+    try {
+      await createTask({
+        data: { title: title.trim(), description, priority, assignedTo, dueDate: due },
+      });
+    } catch (caught) {
+      error = caught;
+    }
     setSaving(false);
-    if (error) { toast.error(error.message); return; }
+    if (error) {
+      toast.error(error instanceof Error ? error.message : "Erro ao registrar tarefa");
+      return;
+    }
     toast.success("Tarefa registrada");
-    setTitle(""); setDescription(""); setOpen(false);
+    setTitle("");
+    setDescription("");
+    setOpen(false);
     qc.invalidateQueries({ queryKey: ["tasks"] });
   }
 
@@ -150,23 +268,47 @@ function QuickAdd({ meId }: { meId: string }) {
       </div>
       {open && (
         <div className="mt-4 space-y-3 border-t border-border pt-4">
-          <Textarea placeholder="Detalhes (opcional)" value={description} onChange={(e) => setDescription(e.target.value)} />
+          <Textarea
+            placeholder="Detalhes (opcional)"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+          />
           <div className="grid gap-3 sm:grid-cols-3">
             <Select value={assignedTo} onValueChange={setAssignedTo}>
-              <SelectTrigger><SelectValue placeholder={assignees.length ? "Responsável" : "Nenhum responsável cadastrado"} /></SelectTrigger>
-              <SelectContent>{assignees.map((p) => <SelectItem key={p.id} value={p.id}>{p.full_name || p.email}</SelectItem>)}</SelectContent>
-            </Select>
-            <Select value={priority} onValueChange={(v) => setPriority(v as Priority)}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectTrigger>
+                <SelectValue
+                  placeholder={assignees.length ? "Responsável" : "Nenhum responsável cadastrado"}
+                />
+              </SelectTrigger>
               <SelectContent>
-                {(["alta", "media", "baixa"] as Priority[]).map((p) => <SelectItem key={p} value={p}>Prioridade {PRIORITY_LABEL[p].toLowerCase()}</SelectItem>)}
+                {assignees.map((p) => (
+                  <SelectItem key={p.id} value={p.id}>
+                    {p.full_name || p.email}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
-            <Input type="date" value={due} onChange={(e) => setDue(e.target.value)} />
+            <Select value={priority} onValueChange={(v) => setPriority(v as Priority)}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {(["alta", "media", "baixa"] as Priority[]).map((p) => (
+                  <SelectItem key={p} value={p}>
+                    Prioridade {PRIORITY_LABEL[p].toLowerCase()}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <DatePicker value={due} onChange={setDue} />
           </div>
           <div className="flex justify-end gap-2">
-            <Button type="button" variant="ghost" onClick={() => setOpen(false)}>Cancelar</Button>
-            <Button type="submit" variant="gold" disabled={saving || !title.trim()}>Registrar</Button>
+            <Button type="button" variant="ghost" onClick={() => setOpen(false)}>
+              Cancelar
+            </Button>
+            <Button type="submit" variant="gold" disabled={saving || !title.trim()}>
+              Registrar
+            </Button>
           </div>
         </div>
       )}

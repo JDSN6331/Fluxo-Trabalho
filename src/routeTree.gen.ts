@@ -12,8 +12,12 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
+import { Route as RedefinirSenhaRouteImport } from './routes/redefinir-senha'
+import { Route as AuthenticatedAdministracaoRouteImport } from './routes/_authenticated/administracao'
+import { Route as AuthenticatedAnalisesRouteImport } from './routes/_authenticated/analises'
 import { Route as AuthenticatedCalendarioRouteImport } from './routes/_authenticated/calendario'
 import { Route as AuthenticatedTarefasRouteImport } from './routes/_authenticated/tarefas'
+import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -29,6 +33,22 @@ const AuthRoute = AuthRouteImport.update({
   path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
+const RedefinirSenhaRoute = RedefinirSenhaRouteImport.update({
+  id: '/redefinir-senha',
+  path: '/redefinir-senha',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedAdministracaoRoute =
+  AuthenticatedAdministracaoRouteImport.update({
+    id: '/administracao',
+    path: '/administracao',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAnalisesRoute = AuthenticatedAnalisesRouteImport.update({
+  id: '/analises',
+  path: '/analises',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedCalendarioRoute = AuthenticatedCalendarioRouteImport.update({
   id: '/calendario',
   path: '/calendario',
@@ -39,45 +59,84 @@ const AuthenticatedTarefasRoute = AuthenticatedTarefasRouteImport.update({
   path: '/tarefas',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
+  id: '/api/auth/$',
+  path: '/api/auth/$',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/redefinir-senha': typeof RedefinirSenhaRoute
+  '/administracao': typeof AuthenticatedAdministracaoRoute
+  '/analises': typeof AuthenticatedAnalisesRoute
   '/calendario': typeof AuthenticatedCalendarioRoute
   '/tarefas': typeof AuthenticatedTarefasRoute
+  '/api/auth/$': typeof ApiAuthSplatRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/redefinir-senha': typeof RedefinirSenhaRoute
+  '/administracao': typeof AuthenticatedAdministracaoRoute
+  '/analises': typeof AuthenticatedAnalisesRoute
   '/calendario': typeof AuthenticatedCalendarioRoute
   '/tarefas': typeof AuthenticatedTarefasRoute
+  '/api/auth/$': typeof ApiAuthSplatRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
+  '/redefinir-senha': typeof RedefinirSenhaRoute
+  '/_authenticated/administracao': typeof AuthenticatedAdministracaoRoute
+  '/_authenticated/analises': typeof AuthenticatedAnalisesRoute
   '/_authenticated/calendario': typeof AuthenticatedCalendarioRoute
   '/_authenticated/tarefas': typeof AuthenticatedTarefasRoute
+  '/api/auth/$': typeof ApiAuthSplatRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/calendario' | '/tarefas'
+  fullPaths:
+    | '/'
+    | '/auth'
+    | '/redefinir-senha'
+    | '/administracao'
+    | '/analises'
+    | '/calendario'
+    | '/tarefas'
+    | '/api/auth/$'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/calendario' | '/tarefas'
+  to:
+    | '/'
+    | '/auth'
+    | '/redefinir-senha'
+    | '/administracao'
+    | '/analises'
+    | '/calendario'
+    | '/tarefas'
+    | '/api/auth/$'
   id:
     | '__root__'
     | '/'
     | '/_authenticated'
     | '/auth'
+    | '/redefinir-senha'
+    | '/_authenticated/administracao'
+    | '/_authenticated/analises'
     | '/_authenticated/calendario'
     | '/_authenticated/tarefas'
+    | '/api/auth/$'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
+  RedefinirSenhaRoute: typeof RedefinirSenhaRoute
+  ApiAuthSplatRoute: typeof ApiAuthSplatRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -103,6 +162,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/redefinir-senha': {
+      id: '/redefinir-senha'
+      path: '/redefinir-senha'
+      fullPath: '/redefinir-senha'
+      preLoaderRoute: typeof RedefinirSenhaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/administracao': {
+      id: '/_authenticated/administracao'
+      path: '/administracao'
+      fullPath: '/administracao'
+      preLoaderRoute: typeof AuthenticatedAdministracaoRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/analises': {
+      id: '/_authenticated/analises'
+      path: '/analises'
+      fullPath: '/analises'
+      preLoaderRoute: typeof AuthenticatedAnalisesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/calendario': {
       id: '/_authenticated/calendario'
       path: '/calendario'
@@ -117,15 +197,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedTarefasRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/api/auth/$': {
+      id: '/api/auth/$'
+      path: '/api/auth/$'
+      fullPath: '/api/auth/$'
+      preLoaderRoute: typeof ApiAuthSplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedAdministracaoRoute: typeof AuthenticatedAdministracaoRoute
+  AuthenticatedAnalisesRoute: typeof AuthenticatedAnalisesRoute
   AuthenticatedCalendarioRoute: typeof AuthenticatedCalendarioRoute
   AuthenticatedTarefasRoute: typeof AuthenticatedTarefasRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedAdministracaoRoute: AuthenticatedAdministracaoRoute,
+  AuthenticatedAnalisesRoute: AuthenticatedAnalisesRoute,
   AuthenticatedCalendarioRoute: AuthenticatedCalendarioRoute,
   AuthenticatedTarefasRoute: AuthenticatedTarefasRoute,
 }
@@ -137,6 +228,8 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
+  RedefinirSenhaRoute: RedefinirSenhaRoute,
+  ApiAuthSplatRoute: ApiAuthSplatRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -1,10 +1,23 @@
 import { createStart, createCsrfMiddleware, createMiddleware } from "@tanstack/react-start";
 
 import { renderErrorPage } from "./lib/error-page";
-import { attachSupabaseAuth } from "@/integrations/supabase/auth-attacher";
+import { getMigrations } from "better-auth/db/migration";
+import { auth } from "@/lib/auth.server";
+import { initializeAppDatabase } from "@/lib/database.server";
+
+let databaseReady: Promise<void> | undefined;
+function initializeDatabase() {
+  databaseReady ??= (async () => {
+    const { runMigrations } = await getMigrations(auth.options);
+    await runMigrations();
+    await initializeAppDatabase();
+  })();
+  return databaseReady;
+}
 
 const errorMiddleware = createMiddleware().server(async ({ next }) => {
   try {
+    await initializeDatabase();
     return await next();
   } catch (error) {
     if (error != null && typeof error === "object" && "statusCode" in error) {
@@ -26,6 +39,5 @@ const csrfMiddleware = createCsrfMiddleware({
 });
 
 export const startInstance = createStart(() => ({
-  functionMiddleware: [attachSupabaseAuth],
   requestMiddleware: [errorMiddleware, csrfMiddleware],
 }));

@@ -126,14 +126,33 @@
 }
 
 @layer base {
-  body { font-family: var(--font-body); -webkit-font-smoothing: antialiased; }
-  h1, h2, h3, h4 { font-family: var(--font-display); letter-spacing: -0.02em; }
+  body {
+    font-family: var(--font-body);
+    -webkit-font-smoothing: antialiased;
+  }
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-display);
+    letter-spacing: -0.02em;
+  }
 }
 
-@utility bg-gradient-gold { background-image: var(--gradient-gold); }
-@utility shadow-elegant { box-shadow: var(--shadow-elegant); }
+@utility bg-gradient-gold {
+  background-image: var(--gradient-gold);
+}
+@utility shadow-elegant {
+  box-shadow: var(--shadow-elegant);
+}
 @utility notepad {
-  background-image: repeating-linear-gradient(to bottom, transparent 0, transparent 55px, var(--paper-line) 55px, var(--paper-line) 56px);
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent 0,
+    transparent 55px,
+    var(--paper-line) 55px,
+    var(--paper-line) 56px
+  );
 }
 @utility text-gold {
   background-image: var(--gradient-gold);
