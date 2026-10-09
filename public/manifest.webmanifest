@@ -1,0 +1,38 @@
+{
+  "id": "/",
+  "name": "Fluxo — Gestão de tarefas",
+  "short_name": "Fluxo",
+  "description": "Registre, delegue e acompanhe tarefas com calendário.",
+  "lang": "pt-BR",
+  "start_url": "/tarefas",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#181818",
+  "theme_color": "#d8bd76",
+  "categories": ["business", "productivity"],
+  "icons": [
+    {
+      "src": "/pwa-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/pwa-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/pwa-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    { "name": "Tarefas", "short_name": "Tarefas", "url": "/tarefas" },
+    { "name": "Calendário", "short_name": "Calendário", "url": "/calendario" }
+  ]
+}
