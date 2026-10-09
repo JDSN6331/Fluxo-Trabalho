@@ -92,7 +92,7 @@ function AdministrationPage() {
         data: { userId: id, baseUrl: window.location.origin },
       });
       setResetLink(result.link);
-      toast.success("Link gerado e incluído na fila de e-mail");
+      toast.success("Link gerado para envio manual");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Erro ao gerar link");
     }
@@ -226,7 +226,9 @@ function AdministrationPage() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Link de redefinição</DialogTitle>
-            <DialogDescription>Válido por uma hora e enviado também por e-mail.</DialogDescription>
+            <DialogDescription>
+              Válido por uma hora. Copie e envie este link manualmente ao usuário.
+            </DialogDescription>
           </DialogHeader>
           <Input readOnly value={resetLink} />
           <Button

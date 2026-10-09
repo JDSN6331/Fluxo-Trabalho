@@ -224,11 +224,6 @@ export const createPasswordResetLink = createServerFn({ method: "POST" })
       [randomUUID(), target.id, hash, admin.id, expires, now()],
     );
     const link = `${data.baseUrl}/redefinir-senha?token=${encodeURIComponent(token)}`;
-    await notify("redefinir_senha", [target.email], {
-      name: target.name,
-      link,
-      expires_at: expires,
-    });
     return { link, expiresAt: expires };
   });
 export const resetPassword = createServerFn({ method: "POST" })
